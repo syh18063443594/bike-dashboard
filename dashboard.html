@@ -151,29 +151,37 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Micr
 .t1-item .sub{font-size:12px;color:var(--text-muted);font-weight:500}
 .t1-item .sub span{color:var(--text-secondary);font-weight:600}
 
-/* Achievement Cards (personnel, sorted) */
+/* Achievement Cards (personnel, sorted, 3-col metrics) */
 .achieve-section{margin-bottom:24px}
 .achieve-section h3{font-size:15px;margin-bottom:16px;color:var(--text-main);font-weight:700;display:flex;align-items:center;gap:8px}
 .achieve-section h3::before{content:'';display:inline-block;width:4px;height:16px;border-radius:2px;background:linear-gradient(180deg,#f59e0b,#d97706)}
-.achieve-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px}
-.achieve-item{padding:20px;border-radius:var(--radius-sm);background:var(--card-bg);border:1px solid var(--border);cursor:pointer;transition:all .25s;position:relative;overflow:hidden}
+.achieve-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.achieve-item{padding:16px 18px;border-radius:var(--radius-sm);background:var(--card-bg);border:1px solid var(--border);cursor:pointer;transition:all .25s;position:relative;overflow:hidden}
 .achieve-item::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#f59e0b,#fbbf24);transform:scaleX(0);transform-origin:left;transition:transform .3s}
 .achieve-item:hover{border-color:#f59e0b;box-shadow:0 8px 24px rgba(245,158,11,0.12);transform:translateY(-3px)}
 .achieve-item:hover::before{transform:scaleX(1)}
 .achieve-item.rank-1{border-color:#fbbf24;background:linear-gradient(135deg,#fffbeb,#fffdf5)}
 .achieve-item.rank-2{border-color:#d1d5db;background:linear-gradient(135deg,#f9fafb,#f3f4f6)}
 .achieve-item.rank-3{border-color:#fdba74;background:linear-gradient(135deg,#fff7ed,#fffbeb)}
-.achieve-item .achieve-rank{position:absolute;top:12px;right:14px;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff}
+.achieve-item .achieve-rank{position:absolute;top:10px;right:12px;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff}
 .achieve-item.rank-1 .achieve-rank{background:linear-gradient(135deg,#f59e0b,#d97706);box-shadow:0 2px 8px rgba(245,158,11,0.3)}
 .achieve-item.rank-2 .achieve-rank{background:linear-gradient(135deg,#94a3b8,#64748b);box-shadow:0 2px 8px rgba(100,116,139,0.3)}
 .achieve-item.rank-3 .achieve-rank{background:linear-gradient(135deg,#fb923c,#ea580c);box-shadow:0 2px 8px rgba(234,88,12,0.3)}
-.achieve-item .name{font-weight:600;font-size:15px;color:var(--text-main);margin-bottom:10px;padding-right:32px}
-.achieve-item .achieve-pct{font-size:32px;font-weight:800;letter-spacing:-0.5px;line-height:1}
-.achieve-item .achieve-pct.green{color:var(--success)}
-.achieve-item .achieve-pct.amber{color:#f59e0b}
-.achieve-item .achieve-pct.red{color:var(--danger)}
-.achieve-item .achieve-sub{font-size:12px;color:var(--text-muted);margin-top:6px;font-weight:500}
-.achieve-item .achieve-sub span{color:var(--text-secondary);font-weight:600}
+.achieve-item .name{font-weight:700;font-size:14px;color:var(--text-main);margin-bottom:10px;padding-right:28px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.achieve-metrics{display:flex;gap:0;border-radius:var(--radius-xs);overflow:hidden;background:#f8fafc;border:1px solid var(--border-light)}
+.achieve-metrics .metric-col{flex:1;text-align:center;padding:10px 4px;border-right:1px solid var(--border-light)}
+.achieve-metrics .metric-col:last-child{border-right:none}
+.achieve-metrics .metric-label{font-size:10px;color:var(--text-muted);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px}
+.achieve-metrics .metric-pct{font-size:22px;font-weight:800;letter-spacing:-0.5px;line-height:1.1;margin-bottom:4px}
+.achieve-metrics .metric-pct.green{color:var(--success)}
+.achieve-metrics .metric-pct.amber{color:#f59e0b}
+.achieve-metrics .metric-pct.red{color:var(--danger)}
+.achieve-metrics .metric-mom{font-size:10px;font-weight:700;padding:2px 6px;border-radius:8px;display:inline-flex;align-items:center;gap:2px}
+.achieve-metrics .metric-mom.up{background:#ecfdf5;color:#059669}
+.achieve-metrics .metric-mom.down{background:#fef2f2;color:#dc2626}
+.achieve-metrics .metric-mom.flat{background:#f1f5f9;color:#64748b}
+.achieve-metrics .metric-sub{font-size:10px;color:var(--text-muted);margin-top:3px;font-weight:500}
+.achieve-metrics .metric-sub span{color:var(--text-secondary);font-weight:600}
 
 /* MoM creative indicator cards */
 .mom-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-bottom:24px}
@@ -616,6 +624,40 @@ function renderRankItem(item, idx) {
     return '<div class="rank-item"><div class="rank-num ' + cls + '">' + (idx + 1) + '</div><div class="rank-info"><div class="rank-name">' + item.name + '</div><div class="rank-detail">' + prevPct + ' → ' + curPct + '</div></div><div class="rank-val"><div class="rank-pct" style="color:' + pctColor + '">' + arrow + Math.abs(item.decline).toFixed(1) + '%</div><div class="rank-change">' + label + '</div></div></div>';
 }
 
+function renderAchieveMetrics(daily) {
+    let wkInfo = getWeekOfSelectedDate();
+    let moInfo = getMonthOfSelectedDate();
+    function pctCls(ratio) { return ratio >= 0.85 ? 'green' : (ratio >= 0.80 ? 'amber' : 'red'); }
+    function fmtMom(cur, prev) {
+        if (!prev || prev.ratio <= 0) return {text: '持平', cls: 'flat', arrow: '→'};
+        let mom = ((cur.ratio - prev.ratio) / prev.ratio) * 100;
+        if (Math.abs(mom) <= 0.01) return {text: '持平', cls: 'flat', arrow: '→'};
+        return {text: (mom >= 0 ? '+' : '') + mom.toFixed(1) + '%', cls: mom > 0 ? 'up' : 'down', arrow: mom > 0 ? '▲' : '▼'};
+    }
+    // Day
+    let dayData = daily[selEnd] || {ratio: 0, pct: '0%', num: 0, den: 0};
+    let dayIdx = DATA.all_dates.indexOf(selEnd);
+    let dayPrev = dayIdx > 0 ? DATA.all_dates[dayIdx - 1] : null;
+    let dayPrevData = dayPrev ? (daily[dayPrev] || {ratio: 0}) : null;
+    let dayMom = fmtMom(dayData, dayPrevData);
+    // Week
+    let weekData = calcRangeStats(daily, wkInfo.mon, wkInfo.sun);
+    let prevWk = getPrevRange(wkInfo.mon, wkInfo.sun);
+    let weekPrevData = prevWk ? calcRangeStats(daily, prevWk.start, prevWk.end) : {ratio: 0, pct: '-', num: 0, den: 0};
+    let weekMom = fmtMom(weekData, weekPrevData);
+    // Month
+    let monthData = calcRangeStats(daily, moInfo.first, moInfo.last);
+    let prevMo = getPrevRange(moInfo.first, moInfo.last);
+    let monthPrevData = prevMo ? calcRangeStats(daily, prevMo.start, prevMo.end) : {ratio: 0, pct: '-', num: 0, den: 0};
+    let monthMom = fmtMom(monthData, monthPrevData);
+    let h = '<div class="achieve-metrics">';
+    h += '<div class="metric-col"><div class="metric-label">日</div><div class="metric-pct ' + pctCls(dayData.ratio) + '">' + dayData.pct + '</div><div class="metric-mom ' + dayMom.cls + '">' + dayMom.arrow + ' ' + dayMom.text + '</div><div class="metric-sub"><span>' + Math.round(dayData.num) + '</span> / ' + Math.round(dayData.den) + '</div></div>';
+    h += '<div class="metric-col"><div class="metric-label">周</div><div class="metric-pct ' + pctCls(weekData.ratio) + '">' + weekData.pct + '</div><div class="metric-mom ' + weekMom.cls + '">' + weekMom.arrow + ' ' + weekMom.text + '</div><div class="metric-sub"><span>' + Math.round(weekData.num) + '</span> / ' + Math.round(weekData.den) + '</div></div>';
+    h += '<div class="metric-col"><div class="metric-label">月</div><div class="metric-pct ' + pctCls(monthData.ratio) + '">' + monthData.pct + '</div><div class="metric-mom ' + monthMom.cls + '">' + monthMom.arrow + ' ' + monthMom.text + '</div><div class="metric-sub"><span>' + Math.round(monthData.num) + '</span> / ' + Math.round(monthData.den) + '</div></div>';
+    h += '</div>';
+    return h;
+}
+
 function render() {
     if (!DATA) return;
     let d = ld();
@@ -784,15 +826,11 @@ function render() {
         h += '<div class="achieve-grid">';
         for (let i = 0; i < t2Sorted.length; i++) {
             let t2v = t2Sorted[i];
-            let s2 = DATA.t2_data[t2v].summary;
-            let moAch = calcRangeStats(DATA.t2_data[t2v].daily, moFirst, moLast);
             let rankCls = i === 0 ? 'rank-1' : (i === 1 ? 'rank-2' : (i === 2 ? 'rank-3' : ''));
-            let achCls = moAch.ratio >= 0.85 ? 'green' : (moAch.ratio >= 0.80 ? 'amber' : 'red');
             h += '<div class="achieve-item ' + rankCls + '" onclick="nav(\'t2\',\'' + t2v + '\')">';
             if (i < 3) h += '<div class="achieve-rank">' + (i + 1) + '</div>';
             h += '<div class="name">' + t2v + '</div>';
-            h += '<div class="achieve-pct ' + achCls + '">' + moAch.pct + '</div>';
-            h += '<div class="achieve-sub">本周 <span>' + s2.week_this.pct + '</span> · 本月 <span>' + s2.month_this.pct + '</span></div>';
+            h += renderAchieveMetrics(DATA.t2_data[t2v].daily);
             h += '</div>';
         }
         h += '</div></div>';
@@ -811,15 +849,11 @@ function render() {
         for (let i = 0; i < t1s.length; i++) {
             let t1v = t1s[i];
             let kk = t2 + "/" + t1v;
-            let s1 = DATA.t1_data[kk].summary;
-            let moAch = calcRangeStats(DATA.t1_data[kk].daily, moFirst, moLast);
             let rankCls = i === 0 ? 'rank-1' : (i === 1 ? 'rank-2' : (i === 2 ? 'rank-3' : ''));
-            let achCls = moAch.ratio >= 0.85 ? 'green' : (moAch.ratio >= 0.80 ? 'amber' : 'red');
             h += '<div class="achieve-item ' + rankCls + '" onclick="nav(\'t1\',\'' + t2 + '\',\'' + t1v + '\')">';
             if (i < 3) h += '<div class="achieve-rank">' + (i + 1) + '</div>';
             h += '<div class="name">' + t1v + '</div>';
-            h += '<div class="achieve-pct ' + achCls + '">' + moAch.pct + '</div>';
-            h += '<div class="achieve-sub">本周 <span>' + s1.week_this.pct + '</span> · 本月 <span>' + s1.month_this.pct + '</span></div>';
+            h += renderAchieveMetrics(DATA.t1_data[kk].daily);
             h += '</div>';
         }
         h += '</div></div>';
@@ -840,15 +874,11 @@ function render() {
         for (let i = 0; i < workers.length; i++) {
             let w = workers[i];
             let wk = t2 + "/" + t1 + "/" + w;
-            let sw = DATA.worker_data[wk].summary;
-            let moAch = calcRangeStats(DATA.worker_data[wk].daily, moFirst, moLast);
             let rankCls = i === 0 ? 'rank-1' : (i === 1 ? 'rank-2' : (i === 2 ? 'rank-3' : ''));
-            let achCls = moAch.ratio >= 0.85 ? 'green' : (moAch.ratio >= 0.80 ? 'amber' : 'red');
             h += '<div class="achieve-item ' + rankCls + '" onclick="nav(\'worker\',\'' + t2 + '\',\'' + t1 + '\',\'' + w + '\')">';
             if (i < 3) h += '<div class="achieve-rank">' + (i + 1) + '</div>';
             h += '<div class="name">' + w + '</div>';
-            h += '<div class="achieve-pct ' + achCls + '">' + moAch.pct + '</div>';
-            h += '<div class="achieve-sub">本周 <span>' + sw.week_this.pct + '</span> · 本月 <span>' + sw.month_this.pct + '</span></div>';
+            h += renderAchieveMetrics(DATA.worker_data[wk].daily);
             h += '</div>';
         }
         h += '</div></div>';
