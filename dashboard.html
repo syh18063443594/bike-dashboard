@@ -551,9 +551,13 @@ function getWeekOfSelectedDate() {
     monday.setDate(d.getDate() + mondayOffset);
     let sunday = new Date(monday);
     sunday.setDate(monday.getDate() + 6);
-    let mon = monday.toISOString().slice(0,10);
-    let sun = sunday.toISOString().slice(0,10);
-    return {mon: mon, sun: sun, dates: DATA.all_dates.filter(dd => dd >= mon && dd <= sun)};
+    function fmt(dt) {
+        let y = dt.getFullYear();
+        let m = String(dt.getMonth() + 1).padStart(2, '0');
+        let dd = String(dt.getDate()).padStart(2, '0');
+        return y + '-' + m + '-' + dd;
+    }
+    return {mon: fmt(monday), sun: fmt(sunday), dates: DATA.all_dates.filter(dd => dd >= fmt(monday) && dd <= fmt(sunday))};
 }
 
 function getMonthOfSelectedDate() {
@@ -573,7 +577,8 @@ function getWeekRange(ds) {
     let d = new Date(ds + "T00:00:00"); let dow = d.getDay(); let mon = dow === 0 ? 6 : dow - 1;
     let monday = new Date(d); monday.setDate(d.getDate() - mon);
     let sunday = new Date(monday); sunday.setDate(monday.getDate() + 6);
-    return [monday.toISOString().slice(0,10), sunday.toISOString().slice(0,10)];
+    function fmt(dt) { let y = dt.getFullYear(); let m = String(dt.getMonth()+1).padStart(2,'0'); let dd = String(dt.getDate()).padStart(2,'0'); return y + '-' + m + '-' + dd; }
+    return [fmt(monday), fmt(sunday)];
 }
 
 function buildSparkline(values, color, fillOpacity) {
