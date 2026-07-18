@@ -168,19 +168,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Micr
 .achieve-item.rank-2 .achieve-rank{background:linear-gradient(135deg,#94a3b8,#64748b);box-shadow:0 2px 8px rgba(100,116,139,0.3)}
 .achieve-item.rank-3 .achieve-rank{background:linear-gradient(135deg,#fb923c,#ea580c);box-shadow:0 2px 8px rgba(234,88,12,0.3)}
 .achieve-item .name{font-weight:700;font-size:14px;color:var(--text-main);margin-bottom:10px;padding-right:28px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.achieve-metrics{display:flex;gap:0;border-radius:var(--radius-xs);overflow:hidden;background:#f8fafc;border:1px solid var(--border-light)}
-.achieve-metrics .metric-col{flex:1;text-align:center;padding:10px 4px;border-right:1px solid var(--border-light)}
-.achieve-metrics .metric-col:last-child{border-right:none}
-.achieve-metrics .metric-label{font-size:10px;color:var(--text-muted);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px}
-.achieve-metrics .metric-pct{font-size:22px;font-weight:800;letter-spacing:-0.5px;line-height:1.1;margin-bottom:4px}
+.achieve-metrics{display:flex;flex-direction:column;gap:0;border-radius:var(--radius-xs);overflow:hidden;background:#f8fafc;border:1px solid var(--border-light)}
+.achieve-metrics .metric-row{display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid var(--border-light)}
+.achieve-metrics .metric-row:last-child{border-bottom:none}
+.achieve-metrics .metric-label{width:28px;font-size:11px;color:var(--text-muted);font-weight:700;text-align:center;flex-shrink:0}
+.achieve-metrics .metric-pct{font-size:16px;font-weight:800;letter-spacing:-0.5px;line-height:1.1;width:55px;flex-shrink:0}
 .achieve-metrics .metric-pct.green{color:var(--success)}
 .achieve-metrics .metric-pct.amber{color:#f59e0b}
 .achieve-metrics .metric-pct.red{color:var(--danger)}
-.achieve-metrics .metric-mom{font-size:10px;font-weight:700;padding:2px 6px;border-radius:8px;display:inline-flex;align-items:center;gap:2px}
+.achieve-metrics .metric-mom{font-size:10px;font-weight:700;padding:2px 6px;border-radius:8px;display:inline-flex;align-items:center;gap:2px;width:58px;flex-shrink:0;justify-content:center}
 .achieve-metrics .metric-mom.up{background:#ecfdf5;color:#059669}
 .achieve-metrics .metric-mom.down{background:#fef2f2;color:#dc2626}
 .achieve-metrics .metric-mom.flat{background:#f1f5f9;color:#64748b}
-.achieve-metrics .metric-sub{font-size:10px;color:var(--text-muted);margin-top:3px;font-weight:500}
+.achieve-metrics .metric-sub{font-size:10px;color:var(--text-muted);font-weight:500;flex:1;text-align:right}
 .achieve-metrics .metric-sub span{color:var(--text-secondary);font-weight:600}
 
 /* Loading */
@@ -620,9 +620,9 @@ function renderAchieveMetrics(daily) {
     let monthPrevData = prevMo ? calcRangeStats(daily, prevMo.start, prevMo.end) : {ratio: 0, pct: '-', num: 0, den: 0};
     let monthMom = fmtMom(monthData, monthPrevData);
     let h = '<div class="achieve-metrics">';
-    h += '<div class="metric-col"><div class="metric-label">日</div><div class="metric-pct ' + pctCls(dayData.ratio) + '">' + dayData.pct + '</div><div class="metric-mom ' + dayMom.cls + '">' + dayMom.arrow + ' ' + dayMom.text + '</div><div class="metric-sub"><span>' + Math.round(dayData.num) + '</span> / ' + Math.round(dayData.den) + '</div></div>';
-    h += '<div class="metric-col"><div class="metric-label">周</div><div class="metric-pct ' + pctCls(weekData.ratio) + '">' + weekData.pct + '</div><div class="metric-mom ' + weekMom.cls + '">' + weekMom.arrow + ' ' + weekMom.text + '</div><div class="metric-sub"><span>' + Math.round(weekData.num) + '</span> / ' + Math.round(weekData.den) + '</div></div>';
-    h += '<div class="metric-col"><div class="metric-label">月</div><div class="metric-pct ' + pctCls(monthData.ratio) + '">' + monthData.pct + '</div><div class="metric-mom ' + monthMom.cls + '">' + monthMom.arrow + ' ' + monthMom.text + '</div><div class="metric-sub"><span>' + Math.round(monthData.num) + '</span> / ' + Math.round(monthData.den) + '</div></div>';
+    h += '<div class="metric-row"><div class="metric-label">日</div><div class="metric-pct ' + pctCls(dayData.ratio) + '">' + dayData.pct + '</div><div class="metric-mom ' + dayMom.cls + '">' + dayMom.arrow + ' ' + dayMom.text + '</div><div class="metric-sub"><span>' + Math.round(dayData.num) + '</span> / ' + Math.round(dayData.den) + '</div></div>';
+    h += '<div class="metric-row"><div class="metric-label">周</div><div class="metric-pct ' + pctCls(weekData.ratio) + '">' + weekData.pct + '</div><div class="metric-mom ' + weekMom.cls + '">' + weekMom.arrow + ' ' + weekMom.text + '</div><div class="metric-sub"><span>' + Math.round(weekData.num) + '</span> / ' + Math.round(weekData.den) + '</div></div>';
+    h += '<div class="metric-row"><div class="metric-label">月</div><div class="metric-pct ' + pctCls(monthData.ratio) + '">' + monthData.pct + '</div><div class="metric-mom ' + monthMom.cls + '">' + monthMom.arrow + ' ' + monthMom.text + '</div><div class="metric-sub"><span>' + Math.round(monthData.num) + '</span> / ' + Math.round(monthData.den) + '</div></div>';
     h += '</div>';
     return h;
 }
