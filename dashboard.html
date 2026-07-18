@@ -380,21 +380,28 @@ let selStart = "", selEnd = "";
 
 
 if (DATA) {
-
+    function getUrlParam(name) {
+        var p = new URLSearchParams(window.location.search);
+        return p.get(name);
+    }
     let dates = DATA.all_dates;
-
-    selEnd = dates[dates.length - 1];
-
-    selStart = dates[Math.max(0, dates.length - 7)];
-
+    let urlStart = getUrlParam('start');
+    let urlEnd = getUrlParam('end');
+    let urlT2 = getUrlParam('t2');
+    let urlT1 = getUrlParam('t1');
+    let urlWorker = getUrlParam('worker');
+    selEnd = urlEnd || dates[dates.length - 1];
+    selStart = urlStart || dates[Math.max(0, dates.length - 7)];
+    if (urlT2) { t2 = urlT2; level = "t2"; }
+    if (urlT1) { t1 = urlT1; level = "t1"; }
+    if (urlWorker) { worker = urlWorker; level = "worker"; }
     document.getElementById("dp_start").value = selStart;
-
     document.getElementById("dp_end").value = selEnd;
-
+    document.getElementById("sel_t2").value = t2;
+    document.getElementById("sel_t1").value = t1;
+    document.getElementById("sel_t0").value = worker;
     initFilters();
-
     render();
-
 } else {
 
     document.getElementById("app").innerHTML = "<div class='loading'>数据加载失败</div>";
