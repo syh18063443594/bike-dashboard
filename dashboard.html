@@ -580,9 +580,8 @@ function resetFilters() {
 
     let dates = DATA.all_dates;
 
-    selEnd = dates[dates.length - 1];
-
-    selStart = dates[Math.max(0, dates.length - 7)];
+selEnd = dates[dates.length - 1];
+selStart = selEnd;
 
     document.getElementById("dp_start").value = selStart;
 
@@ -606,9 +605,8 @@ function latest() {
 
     let dates = DATA.all_dates;
 
-    selEnd = dates[dates.length - 1];
-
-    selStart = dates[Math.max(0, dates.length - 7)];
+selEnd = dates[dates.length - 1];
+selStart = selEnd;
 
     document.getElementById("dp_start").value = selStart;
 
