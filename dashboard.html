@@ -639,9 +639,59 @@ function nav(l, a, b, c) {
 
 
 function getDatesInRange(start, end) {
-
     return DATA.all_dates.filter(d => d >= start && d <= end);
+}
 
+function computeSummary(endDate) {
+    let d = new Date(endDate + "T00:00:00");
+    let year = d.getFullYear();
+    let month = d.getMonth();
+    let day = d.getDate();
+
+    // Week: Mon-Sun of endDate's week
+    let dow = d.getDay();
+    let monOffset = dow === 0 ? 6 : dow - 1;
+    let monday = new Date(d); monday.setDate(day - monOffset);
+    let sunday = new Date(monday); sunday.setDate(monday.getDate() + 6);
+    let weekThisStart = monday.toISOString().slice(0, 10);
+    let weekThisEnd = sunday.toISOString().slice(0, 10);
+
+    // Previous week
+    let prevMonday = new Date(monday); prevMonday.setDate(monday.getDate() - 7);
+    let prevSunday = new Date(prevMonday); prevSunday.setDate(prevMonday.getDate() + 6);
+    let weekLastStart = prevMonday.toISOString().slice(0, 10);
+    let weekLastEnd = prevSunday.toISOString().slice(0, 10);
+
+    // Month: 1st to last day of endDate's month
+    let monthFirst = new Date(year, month, 1).toISOString().slice(0, 10);
+    let monthLastDay = new Date(year, month + 1, 0).getDate();
+    let monthEnd = new Date(year, month, monthLastDay).toISOString().slice(0, 10);
+
+    // Previous month same range
+    let prevMonth = new Date(year, month - 1, 1);
+    let prevMonthYear = prevMonth.getFullYear();
+    let prevMonthMonth = prevMonth.getMonth();
+    let prevMonthLastDay = new Date(prevMonthYear, prevMonthMonth + 1, 0).getDate();
+    let prevMonthEndDay = Math.min(day, prevMonthLastDay);
+    let monthFirstPrev = new Date(prevMonthYear, prevMonthMonth, 1).toISOString().slice(0, 10);
+    let monthEndPrev = new Date(prevMonthYear, prevMonthMonth, prevMonthEndDay).toISOString().slice(0, 10);
+
+    // Aggregate helper
+    function agg(daily, rangeStart, rangeEnd) {
+        let dates = DATA.all_dates.filter(dt => dt >= rangeStart && dt <= rangeEnd);
+        let num = 0, den = 0;
+        dates.forEach(dt => { if (daily[dt]) { num += daily[dt].num; den += daily[dt].den; } });
+        let ratio = den > 0 ? num / den : 0;
+        return {num: Math.round(num*10)/10, den: Math.round(den*10)/10, ratio: Math.round(ratio*10000)/10000, pct: (Math.round(ratio*1000)/10).toFixed(1) + "%"};
+    }
+
+    return {
+        weekThis: {start: weekThisStart, end: weekThisEnd},
+        weekLast: {start: weekLastStart, end: weekLastEnd},
+        monthThis: {start: monthFirst, end: monthEnd},
+        monthLast: {start: monthFirstPrev, end: monthEndPrev},
+        agg: agg
+    };
 }
 
 
@@ -783,219 +833,122 @@ function calcDayDeclineRanking() {
 
 
 function calcWeekDeclineRanking() {
-
     let ranking = [];
+    // Compute natural week ranges based on current selEnd
+    let cs = computeSummary(selEnd);
 
     if (level === "city") {
-
-        // 上海市 → 下一层 T2
-
         DATA.t2_list.forEach(t2v => {
-
-            let s = DATA.t2_data[t2v].summary;
-
-            if (s.week_last.ratio > 0 && s.week_this.ratio > 0) {
-
-                let decline = ((s.week_last.ratio - s.week_this.ratio) / s.week_last.ratio) * 100;
-
-                ranking.push({name: t2v, cur: s.week_this, prev: s.week_last, decline: decline});
-
+            let cur = cs.agg(DATA.t2_data[t2v].daily, cs.weekThis.start, cs.weekThis.end);
+            let prev = cs.agg(DATA.t2_data[t2v].daily, cs.weekLast.start, cs.weekLast.end);
+            if (prev.ratio > 0 && cur.ratio > 0) {
+                let decline = ((prev.ratio - cur.ratio) / prev.ratio) * 100;
+                ranking.push({name: t2v, cur: cur, prev: prev, decline: decline});
             }
-
         });
-
     } else if (level === "t2" && t2) {
-
-        // T2 → 下一层 T1
-
         let t1List = DATA.t2_data[t2].t1_list;
-
         t1List.forEach(t1v => {
-
             let k = t2 + "/" + t1v;
-
             if (!DATA.t1_data[k]) return;
-
-            let s = DATA.t1_data[k].summary;
-
-            if (s.week_last.ratio > 0 && s.week_this.ratio > 0) {
-
-                let decline = ((s.week_last.ratio - s.week_this.ratio) / s.week_last.ratio) * 100;
-
-                ranking.push({name: t1v, cur: s.week_this, prev: s.week_last, decline: decline});
-
+            let cur = cs.agg(DATA.t1_data[k].daily, cs.weekThis.start, cs.weekThis.end);
+            let prev = cs.agg(DATA.t1_data[k].daily, cs.weekLast.start, cs.weekLast.end);
+            if (prev.ratio > 0 && cur.ratio > 0) {
+                let decline = ((prev.ratio - cur.ratio) / prev.ratio) * 100;
+                ranking.push({name: t1v, cur: cur, prev: prev, decline: decline});
             }
-
         });
-
     } else if (level === "t1" && t2 && t1) {
-
-        // T1 → 下一层 T0 作业人员
-
         let k = t2 + "/" + t1;
-
         if (DATA.t1_data[k]) {
-
             DATA.t1_data[k].workers.forEach(w => {
-
                 let wkKey = t2 + "/" + t1 + "/" + w;
-
                 if (!DATA.worker_data[wkKey]) return;
-
-                let s = DATA.worker_data[wkKey].summary;
-
-                if (s.week_last.ratio > 0 && s.week_this.ratio > 0) {
-
-                    let decline = ((s.week_last.ratio - s.week_this.ratio) / s.week_last.ratio) * 100;
-
-                    ranking.push({name: w, cur: s.week_this, prev: s.week_last, decline: decline});
-
+                let cur = cs.agg(DATA.worker_data[wkKey].daily, cs.weekThis.start, cs.weekThis.end);
+                let prev = cs.agg(DATA.worker_data[wkKey].daily, cs.weekLast.start, cs.weekLast.end);
+                if (prev.ratio > 0 && cur.ratio > 0) {
+                    let decline = ((prev.ratio - cur.ratio) / prev.ratio) * 100;
+                    ranking.push({name: w, cur: cur, prev: prev, decline: decline});
                 }
-
             });
-
         }
-
     }
 
     ranking.sort((a, b) => b.decline - a.decline);
-
     return ranking.slice(0, 3);
-
 }
 
 
 
-function calcTargetGoal(summary) {
-
+function calcTargetGoal(cs, selEnd, d) {
     const TARGET = 0.85;
-
     let endDate = new Date(selEnd + "T00:00:00");
-
     let year = endDate.getFullYear();
-
     let month = endDate.getMonth();
-
     let daysInMonth = new Date(year, month + 1, 0).getDate();
 
-    
-
     // passed days: count dates in current month up to selEnd
-
-    let passedDates = DATA.all_dates.filter(d => {
-
-        let dObj = new Date(d + "T00:00:00");
-
-        return dObj.getFullYear() === year && dObj.getMonth() === month && d <= selEnd;
-
+    let passedDates = DATA.all_dates.filter(dt => {
+        let dObj = new Date(dt + "T00:00:00");
+        return dObj.getFullYear() === year && dObj.getMonth() === month && dt <= selEnd;
     });
-
     let passedDays = passedDates.length;
-
     let remainingDays = daysInMonth - passedDays;
 
-    
-
-    let currentRatio = summary.month_this.ratio || 0;
-
+    // Use dynamically computed monthly ratio
+    let currentRatio = cs.agg(d.trend, cs.monthThis.start, cs.monthThis.end).ratio || 0;
     let timeProgress = (passedDays / daysInMonth) * 100;
-
     let goalProgress = (currentRatio / TARGET) * 100;
 
-    
-
     let remainingPct = "-";
-
     let status = "normal";
-
     let isAchieved = false;
 
-    
-
     if (remainingDays <= 0) {
-
         isAchieved = currentRatio >= TARGET;
-
         remainingPct = isAchieved ? "已达标" : "未达标";
-
         status = isAchieved ? "ok" : "danger";
-
     } else {
-
-        let num = summary.month_this.num || 0;
-
-        let den = summary.month_this.den || 0;
-
+        let mt = cs.agg(d.trend, cs.monthThis.start, cs.monthThis.end);
+        let num = mt.num || 0;
+        let den = mt.den || 0;
         if (den > 0 && passedDays > 0) {
-
             let avgDailyDen = den / passedDays;
-
             let remainingDen = avgDailyDen * remainingDays;
-
             let targetTotalNum = TARGET * (den + remainingDen);
-
             let remainingNum = targetTotalNum - num;
-
             if (remainingNum <= 0) {
-
                 isAchieved = true;
-
                 remainingPct = "已达标";
-
                 status = "ok";
-
             } else if (remainingDen > 0) {
-
                 let reqRatio = remainingNum / remainingDen;
-
                 remainingPct = (reqRatio * 100).toFixed(1) + "%";
-
                 status = reqRatio > TARGET ? "danger" : (reqRatio > TARGET * 0.9 ? "warn" : "normal");
-
             }
-
         }
-
     }
 
-    
-
     return {
-
         target: (TARGET * 100).toFixed(0) + "%",
-
         current: (currentRatio * 100).toFixed(1) + "%",
-
         timeProgress: timeProgress.toFixed(1),
-
         goalProgress: goalProgress.toFixed(1),
-
         remainingDays: remainingDays,
-
         remainingPct: remainingPct,
-
         status: status,
-
         passedDays: passedDays,
-
         daysInMonth: daysInMonth
-
     };
-
 }
 
 
 
 function ld() {
-
-    if (level === "city") return {trend: DATA.city_trend, summary: DATA.city_summary, label: DATA.city};
-
-    if (level === "t2") return {trend: DATA.t2_data[t2].trend, summary: DATA.t2_data[t2].summary, label: t2};
-
-    if (level === "t1") { let k = t2 + "/" + t1; return {trend: DATA.t1_data[k].trend, summary: DATA.t1_data[k].summary, label: t1}; }
-
-    if (level === "worker") { let k = t2 + "/" + t1 + "/" + worker; let wd = DATA.worker_data[k]; return {trend: wd.daily, summary: wd.summary, label: worker}; }
-
+    if (level === "city") return {trend: DATA.city_daily, label: DATA.city};
+    if (level === "t2") return {trend: DATA.t2_data[t2].daily, label: t2};
+    if (level === "t1") { let k = t2 + "/" + t1; return {trend: DATA.t1_data[k].daily, label: t1}; }
+    if (level === "worker") { let k = t2 + "/" + t1 + "/" + worker; return {trend: DATA.worker_data[k].daily, label: worker}; }
 }
 
 
@@ -1085,73 +1038,49 @@ function renderRankItem(item, idx) {
 
 
 function render() {
-
     if (!DATA) return;
 
     let d = ld();
-
     let rangeDates = getDatesInRange(selStart, selEnd);
 
-    let s = d.summary;
-
-
+    // Compute summary dynamically based on selEnd
+    let cs = computeSummary(selEnd);
+    let wt = cs.agg(d.trend, cs.weekThis.start, cs.weekThis.end);
+    let wl = cs.agg(d.trend, cs.weekLast.start, cs.weekLast.end);
+    let mt = cs.agg(d.trend, cs.monthThis.start, cs.monthThis.end);
+    let ml = cs.agg(d.trend, cs.monthLast.start, cs.monthLast.end);
 
     let h = "";
 
     h += '<div class="breadcrumb">';
-
     h += '<span class="' + (level === "city" ? "active" : "") + '" onclick="nav(\'city\')">' + DATA.city + '</span>';
-
     if (level !== "city" && t2) h += '<span class="arrow">▶</span><span class="' + (level === "t2" ? "active" : "") + '" onclick="nav(\'t2\',\'' + t2 + '\')">' + t2 + '</span>';
-
     if ((level === "t1" || level === "worker") && t1) h += '<span class="arrow">▶</span><span class="' + (level === "t1" ? "active" : "") + '" onclick="nav(\'t1\',\'' + t2 + '\',\'' + t1 + '\')">' + t1 + '</span>';
-
     if (level === "worker") h += '<span class="arrow">▶</span><span class="active">' + worker + '</span>';
-
     h += '</div>';
 
-
-
     // Target goal calculation
-
-    let goal = calcTargetGoal(s);
-
-
+    let goal = calcTargetGoal(cs, selEnd, d);
 
     // Range stats for cards
-
     let curStats = calcRangeStats(d.trend, selStart, selEnd);
-
     let prevRange = getPrevRange(selStart, selEnd);
-
     let prevStats = prevRange ? calcRangeStats(d.trend, prevRange.start, prevRange.end) : {ratio: 0, pct: "-"};
-
     let dod = 0;
-
     if (prevStats.ratio > 0) dod = (curStats.ratio - prevStats.ratio) * 100;
-
     let dodHtml = Math.abs(dod) > 0.001 ? '<span class="change ' + (dod >= 0 ? "up" : "down") + '">' + (dod >= 0 ? "▲" : "▼") + Math.abs(dod).toFixed(1) + 'pp</span>' : '';
 
-
-
     h += '<div class="cards">';
-
     h += '<div class="card"><div class="bar blue"></div><div class="card-body"><div class="label">所选时段 (' + rangeDates.length + '天)</div><div class="value-wrap"><div class="value">' + curStats.pct + '</div>' + dodHtml + '</div><div class="sub">' + selStart + ' ~ ' + selEnd + ' · 推荐 ' + Math.round(curStats.num) + ' / 全量 ' + Math.round(curStats.den) + '</div></div></div>';
 
-    let wr = getWeekRange(selEnd);
+    h += '<div class="card"><div class="bar indigo"></div><div class="card-body"><div class="label">本周</div><div class="value-wrap"><div class="value">' + wt.pct + '</div></div><div class="sub">' + cs.weekThis.start + ' ~ ' + cs.weekThis.end + ' · 推荐 ' + Math.round(wt.num) + ' / 全量 ' + Math.round(wt.den) + '</div></div></div>';
 
-    h += '<div class="card"><div class="bar indigo"></div><div class="card-body"><div class="label">本周</div><div class="value-wrap"><div class="value">' + s.week_this.pct + '</div></div><div class="sub">' + wr[0] + ' ~ ' + wr[1] + ' · 推荐 ' + Math.round(s.week_this.num) + ' / 全量 ' + Math.round(s.week_this.den) + '</div></div></div>';
+    h += '<div class="card"><div class="bar violet"></div><div class="card-body"><div class="label">本月</div><div class="value-wrap"><div class="value">' + mt.pct + '</div></div><div class="sub">' + cs.monthThis.start + ' ~ ' + cs.monthThis.end + ' · 推荐 ' + Math.round(mt.num) + ' / 全量 ' + Math.round(mt.den) + '</div></div></div>';
 
-    h += '<div class="card"><div class="bar violet"></div><div class="card-body"><div class="label">本月</div><div class="value-wrap"><div class="value">' + s.month_this.pct + '</div></div><div class="sub">推荐 ' + Math.round(s.month_this.num) + ' / 全量 ' + Math.round(s.month_this.den) + '</div></div></div>';
-
-    let wdiff = ((s.week_this.ratio - s.week_last.ratio) * 100);
-
-    let mdiff = ((s.month_this.ratio - s.month_last.ratio) * 100);
-
+    let wdiff = ((wt.ratio - wl.ratio) * 100);
+    let mdiff = ((mt.ratio - ml.ratio) * 100);
     let wChg = Math.abs(wdiff) > 0.001 ? '<span class="change ' + (wdiff >= 0 ? "up" : "down") + '">' + (wdiff >= 0 ? "▲" : "▼") + Math.abs(wdiff).toFixed(1) + 'pp</span>' : '';
-
     h += '<div class="card"><div class="bar slate"></div><div class="card-body"><div class="label">周环比</div><div class="value-wrap"><div class="value">' + (wdiff >= 0 ? "+" : "") + wdiff.toFixed(1) + 'pp</div>' + wChg + '</div><div class="sub">月环比 ' + (mdiff >= 0 ? "+" : "") + mdiff.toFixed(1) + 'pp</div></div></div>';
-
     h += '</div>';
 
 
@@ -1354,9 +1283,9 @@ function render() {
 
     h += '<div class="compare-grid">';
 
-    h += '<div class="cw current"><div class="label">本周</div><div class="val">' + s.week_this.pct + '</div><div class="sub">' + Math.round(s.week_this.num) + ' / ' + Math.round(s.week_this.den) + '</div></div>';
+    h += '<div class="cw current"><div class="label">本周</div><div class="val">' + wt.pct + '</div><div class="sub">' + Math.round(wt.num) + ' / ' + Math.round(wt.den) + '</div></div>';
 
-    h += '<div class="cw past"><div class="label">上周</div><div class="val">' + s.week_last.pct + '</div><div class="sub">' + Math.round(s.week_last.num) + ' / ' + Math.round(s.week_last.den) + '</div></div>';
+    h += '<div class="cw past"><div class="label">上周</div><div class="val">' + wl.pct + '</div><div class="sub">' + Math.round(wl.num) + ' / ' + Math.round(wl.den) + '</div></div>';
 
     h += '</div>';
 
@@ -1364,9 +1293,9 @@ function render() {
 
     h += '<div class="compare-grid">';
 
-    h += '<div class="cw current"><div class="label">本月</div><div class="val">' + s.month_this.pct + '</div><div class="sub">' + Math.round(s.month_this.num) + ' / ' + Math.round(s.month_this.den) + '</div></div>';
+    h += '<div class="cw current"><div class="label">本月</div><div class="val">' + mt.pct + '</div><div class="sub">' + Math.round(mt.num) + ' / ' + Math.round(mt.den) + '</div></div>';
 
-    h += '<div class="cw past"><div class="label">上月</div><div class="val">' + s.month_last.pct + '</div><div class="sub">' + Math.round(s.month_last.num) + ' / ' + Math.round(s.month_last.den) + '</div></div>';
+    h += '<div class="cw past"><div class="label">上月</div><div class="val">' + ml.pct + '</div><div class="sub">' + Math.round(ml.num) + ' / ' + Math.round(ml.den) + '</div></div>';
 
     h += '</div></div></div>';
 
@@ -1382,11 +1311,11 @@ function render() {
 
             let t2v = DATA.t2_list[i];
 
-            let s2 = DATA.t2_data[t2v].summary;
-
-            let td = calcRangeStats(DATA.t2_data[t2v].daily, selStart, selEnd);
-
-            h += '<div class="t1-item" onclick="nav(\'t2\',\'' + t2v + '\')"><div class="name">' + t2v + '</div><div class="pct">' + td.pct + '</div><div class="sub">本周 <span>' + s2.week_this.pct + '</span> · 本月 <span>' + s2.month_this.pct + '</span></div></div>';
+            let t2Daily = DATA.t2_data[t2v].daily;
+            let td = calcRangeStats(t2Daily, selStart, selEnd);
+            let s2wt = cs.agg(t2Daily, cs.weekThis.start, cs.weekThis.end);
+            let s2mt = cs.agg(t2Daily, cs.monthThis.start, cs.monthThis.end);
+            h += '<div class="t1-item" onclick="nav(\'t2\',\'' + t2v + '\')"><div class="name">' + t2v + '</div><div class="pct">' + td.pct + '</div><div class="sub">本周 <span>' + s2wt.pct + '</span> · 本月 <span>' + s2mt.pct + '</span></div></div>';
 
         }
 
@@ -1404,11 +1333,11 @@ function render() {
 
             let k = t2 + "/" + t1v;
 
-            let s1 = DATA.t1_data[k].summary;
-
-            let td = calcRangeStats(DATA.t1_data[k].daily, selStart, selEnd);
-
-            h += '<div class="t1-item" onclick="nav(\'t1\',\'' + t2 + '\',\'' + t1v + '\')"><div class="name">' + t1v + '</div><div class="pct">' + td.pct + '</div><div class="sub">本周 <span>' + s1.week_this.pct + '</span> · 本月 <span>' + s1.month_this.pct + '</span></div></div>';
+            let t1Daily = DATA.t1_data[k].daily;
+            let td = calcRangeStats(t1Daily, selStart, selEnd);
+            let s1wt = cs.agg(t1Daily, cs.weekThis.start, cs.weekThis.end);
+            let s1mt = cs.agg(t1Daily, cs.monthThis.start, cs.monthThis.end);
+            h += '<div class="t1-item" onclick="nav(\'t1\',\'' + t2 + '\',\'' + t1v + '\')"><div class="name">' + t1v + '</div><div class="pct">' + td.pct + '</div><div class="sub">本周 <span>' + s1wt.pct + '</span> · 本月 <span>' + s1mt.pct + '</span></div></div>';
 
         }
 
@@ -1423,28 +1352,20 @@ function render() {
         let workers = DATA.t1_data[k].workers.slice();
 
         workers.sort((a, b) => {
-
             let wkA = t2 + "/" + t1 + "/" + a;
-
             let wkB = t2 + "/" + t1 + "/" + b;
-
-            let swA = DATA.worker_data[wkA].summary;
-
-            let swB = DATA.worker_data[wkB].summary;
-
-            return (swB.month_this.ratio || 0) - (swA.month_this.ratio || 0);
-
+            let mtA = cs.agg(DATA.worker_data[wkA].daily, cs.monthThis.start, cs.monthThis.end);
+            let mtB = cs.agg(DATA.worker_data[wkB].daily, cs.monthThis.start, cs.monthThis.end);
+            return (mtB.ratio || 0) - (mtA.ratio || 0);
         });
 
         for (let i = 0; i < workers.length; i++) {
-
             let w = workers[i];
-
             let wk = t2 + "/" + t1 + "/" + w;
-
-            let sw = DATA.worker_data[wk].summary;
-
-            h += '<div class="t1-item" onclick="nav(\'worker\',\'' + t2 + '\',\'' + t1 + '\',\'' + w + '\')"><div class="name">' + w + '</div><div class="pct">' + (sw.week_this.pct || "-") + '</div><div class="sub">本周 <span>' + sw.week_this.pct + '</span> · 本月 <span>' + sw.month_this.pct + '</span></div></div>';
+            let wDaily = DATA.worker_data[wk].daily;
+            let wwt = cs.agg(wDaily, cs.weekThis.start, cs.weekThis.end);
+            let wmt = cs.agg(wDaily, cs.monthThis.start, cs.monthThis.end);
+            h += '<div class="t1-item" onclick="nav(\'worker\',\'' + t2 + '\',\'' + t1 + '\',\'' + w + '\')"><div class="name">' + w + '</div><div class="pct">' + wwt.pct + '</div><div class="sub">本周 <span>' + wwt.pct + '</span> · 本月 <span>' + wmt.pct + '</span></div></div>';
 
         }
 
