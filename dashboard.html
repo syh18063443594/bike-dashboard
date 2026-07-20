@@ -648,24 +648,31 @@ function computeSummary(endDate) {
     let month = d.getMonth();
     let day = d.getDate();
 
+    function fmtDate(dt) {
+        let y = dt.getFullYear();
+        let m = String(dt.getMonth() + 1).padStart(2, '0');
+        let dd = String(dt.getDate()).padStart(2, '0');
+        return y + "-" + m + "-" + dd;
+    }
+
     // Week: Mon-Sun of endDate's week
     let dow = d.getDay();
     let monOffset = dow === 0 ? 6 : dow - 1;
     let monday = new Date(d); monday.setDate(day - monOffset);
     let sunday = new Date(monday); sunday.setDate(monday.getDate() + 6);
-    let weekThisStart = monday.toISOString().slice(0, 10);
-    let weekThisEnd = sunday.toISOString().slice(0, 10);
+    let weekThisStart = fmtDate(monday);
+    let weekThisEnd = fmtDate(sunday);
 
     // Previous week
     let prevMonday = new Date(monday); prevMonday.setDate(monday.getDate() - 7);
     let prevSunday = new Date(prevMonday); prevSunday.setDate(prevMonday.getDate() + 6);
-    let weekLastStart = prevMonday.toISOString().slice(0, 10);
-    let weekLastEnd = prevSunday.toISOString().slice(0, 10);
+    let weekLastStart = fmtDate(prevMonday);
+    let weekLastEnd = fmtDate(prevSunday);
 
     // Month: 1st to last day of endDate's month
-    let monthFirst = new Date(year, month, 1).toISOString().slice(0, 10);
+    let monthFirst = fmtDate(new Date(year, month, 1));
     let monthLastDay = new Date(year, month + 1, 0).getDate();
-    let monthEnd = new Date(year, month, monthLastDay).toISOString().slice(0, 10);
+    let monthEnd = fmtDate(new Date(year, month, monthLastDay));
 
     // Previous month same range
     let prevMonth = new Date(year, month - 1, 1);
@@ -673,8 +680,8 @@ function computeSummary(endDate) {
     let prevMonthMonth = prevMonth.getMonth();
     let prevMonthLastDay = new Date(prevMonthYear, prevMonthMonth + 1, 0).getDate();
     let prevMonthEndDay = Math.min(day, prevMonthLastDay);
-    let monthFirstPrev = new Date(prevMonthYear, prevMonthMonth, 1).toISOString().slice(0, 10);
-    let monthEndPrev = new Date(prevMonthYear, prevMonthMonth, prevMonthEndDay).toISOString().slice(0, 10);
+    let monthFirstPrev = fmtDate(new Date(prevMonthYear, prevMonthMonth, 1));
+    let monthEndPrev = fmtDate(new Date(prevMonthYear, prevMonthMonth, prevMonthEndDay));
 
     // Aggregate helper
     function agg(daily, rangeStart, rangeEnd) {
