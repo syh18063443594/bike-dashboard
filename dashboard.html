@@ -391,7 +391,7 @@ if (DATA) {
     let urlT1 = getUrlParam('t1');
     let urlWorker = getUrlParam('worker');
     selEnd = urlEnd || dates[dates.length - 1];
-    selStart = urlStart || dates[Math.max(0, dates.length - 7)];
+    selStart = urlStart || selEnd;
     if (urlT2) { t2 = urlT2; level = "t2"; }
     if (urlT1) { t1 = urlT1; level = "t1"; }
     if (urlWorker) { worker = urlWorker; level = "worker"; }
